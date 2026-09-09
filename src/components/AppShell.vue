@@ -9,6 +9,7 @@ const router = useRouter()
 const title = computed(() => ({
   '/': '控制台',
   '/question-banks': '题库管理',
+  '/questions': '题目管理',
   '/users': '系统用户',
   '/security': '账号安全',
 })[route.path] ?? '管理端')
@@ -16,6 +17,7 @@ const title = computed(() => ({
 const nav = [
   { to: '/', label: '控制台', icon: 'grid' },
   { to: '/question-banks', label: '题库管理', icon: 'book' },
+  { to: '/questions', label: '题目管理', icon: 'list' },
   { to: '/users', label: '系统用户', icon: 'users' },
 ]
 
@@ -37,6 +39,7 @@ async function logout() {
         <RouterLink v-for="item in nav" :key="item.to" :to="item.to" class="nav-item">
           <svg v-if="item.icon === 'grid'" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>
           <svg v-else-if="item.icon === 'book'" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16"/></svg>
+          <svg v-else-if="item.icon === 'list'" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg>
           <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-4A4.5 4.5 0 0 0 3 18.5V20"/><circle cx="9.5" cy="7" r="3.5"/><path d="M17 9a3 3 0 0 1 0 5.8M21 20v-1.5a4.5 4.5 0 0 0-2.8-4.15"/></svg>
           <span>{{ item.label }}</span>
         </RouterLink>
