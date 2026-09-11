@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AppShell from '../components/AppShell.vue'
+import NoticeToast from '../components/NoticeToast.vue'
 import api from '../lib/api'
 import type { PageResponse, SystemUser, UserRole, UserStatus } from '../types/api'
 
@@ -64,9 +65,9 @@ onMounted(load)
 
 <template>
   <AppShell>
+    <NoticeToast :message="error" @dismiss="error = ''" />
     <div class="page-heading"><div><h1>系统用户</h1><p>创建、维护和保护普通用户与管理员账号。</p></div><button class="button primary" @click="openCreate"><span>+</span> 新增用户</button></div>
     <section class="surface table-surface"><div class="toolbar"><form class="search-box" @submit.prevent="submitSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><input v-model.trim="keyword" placeholder="搜索用户名或显示名称" /><button type="submit">搜索</button></form><select v-model="filters.role" aria-label="账号类型"><option value="">全部账号类型</option><option value="USER">普通用户</option><option value="ADMIN">管理员</option></select><select v-model="filters.status" aria-label="账号状态"><option value="">全部状态</option><option value="ACTIVE">正常</option><option value="DISABLED">已禁用</option></select></div>
-      <p v-if="error" class="form-error table-error">{{ error }}</p>
       <div class="table-scroll"><table><thead><tr><th>用户信息</th><th>账号类型</th><th>状态</th><th>创建时间</th><th class="actions">操作</th></tr></thead><tbody><tr v-if="loading"><td colspan="5" class="empty-state">正在加载…</td></tr><tr v-else-if="users.length === 0"><td colspan="5" class="empty-state">未找到符合条件的系统用户。</td></tr><tr v-for="user in users" :key="user.id"><td><div class="user-cell"><span class="avatar">{{ user.displayName.slice(0, 1) }}</span><span><b>{{ user.displayName }}</b><small>@{{ user.username }}</small></span></div></td><td><span :class="['role-pill', user.role.toLowerCase()]">{{ user.role === 'ADMIN' ? '管理员' : '普通用户' }}</span></td><td><span :class="['status-pill', user.status.toLowerCase()]"><i />{{ user.status === 'ACTIVE' ? '正常' : '已禁用' }}</span></td><td class="date-cell">{{ new Date(user.createdAt).toLocaleString('zh-CN', { hour12: false }) }}</td><td class="actions"><button @click="openEdit(user)">编辑</button><button @click="resetPassword(user)">重置密码</button><button class="danger" @click="remove(user)">删除</button></td></tr></tbody></table></div>
       <footer class="pagination"><span>共 {{ total }} 条记录</span><div><button :disabled="page === 0" @click="page--; load()">上一页</button><b>{{ page + 1 }} / {{ pageCount }}</b><button :disabled="page + 1 >= pageCount" @click="page++; load()">下一页</button></div></footer>
     </section>

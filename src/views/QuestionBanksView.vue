@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import AppShell from '../components/AppShell.vue'
+import NoticeToast from '../components/NoticeToast.vue'
 import api from '../lib/api'
 
 interface QuestionBank { id: number; code: string; name: string; sourceFileName: string }
@@ -19,6 +20,7 @@ const questionTypes = [
   { value: 'SINGLE_CHOICE', label: '单选题', detail: '每题仅有一个正确答案', marker: 'A' },
   { value: 'MULTIPLE_CHOICE', label: '多选题', detail: '每题有多个正确答案', marker: 'A / B' },
   { value: 'INDETERMINATE_CHOICE', label: '不定项', detail: '每题至少有一个正确答案', marker: 'A · B · C' },
+  { value: 'SUBJECTIVE', label: '主观题', detail: 'Word 表格填写题号、题目和参考答案', marker: '答' },
 ]
 
 async function load() {
@@ -76,6 +78,8 @@ onMounted(load)
 
 <template>
   <AppShell>
+    <NoticeToast :message="error" @dismiss="error = ''" />
+    <NoticeToast :message="importError" @dismiss="importError = ''" />
     <div class="page-heading">
       <div><h1>题库管理</h1><p>查看现有题库，并清理不再使用的题库数据。</p></div>
       <button class="button primary" @click="openImport"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3"/><path d="m7 8 5-5 5 5"/><path d="M5 14v5h14v-5"/></svg>导入题库</button>
@@ -88,7 +92,6 @@ onMounted(load)
           <label class="import-label">题库名称<input v-model.trim="form.name" placeholder="上传文件后自动填写" required /></label>
           <fieldset class="question-type-field"><legend>题目类型</legend><div class="question-type-grid"><label v-for="type in questionTypes" :key="type.value" :class="['question-type-card', { selected: form.questionType === type.value }]"><input v-model="form.questionType" type="radio" :value="type.value" /><span class="type-marker">{{ type.marker }}</span><span><b>{{ type.label }}</b><small>{{ type.detail }}</small></span><i aria-hidden="true">✓</i></label></div></fieldset>
           <div class="upload-section"><div class="upload-label"><b>上传题目文件</b><span>仅支持 .docx 格式</span></div><input ref="uploadInput" class="file-input" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" @change="onFileChange" /><div class="upload-dropzone" :class="{ 'has-file': selectedFile }" @click="uploadInput?.click()" @dragover.prevent @drop.prevent="onDrop"><template v-if="selectedFile"><span class="file-icon">W</span><span class="file-summary"><b>{{ selectedFile.name }}</b><small>{{ Math.ceil(selectedFile.size / 1024) }} KB · 已准备导入</small></span><button type="button" class="replace-file" @click.stop="uploadInput?.click()">重新选择</button></template><template v-else><span class="upload-icon">↑</span><b>点击选择或拖拽 Word 文件到这里</b><small>文件需包含题号、题目、选项、答案、解析字段</small></template></div></div>
-          <p v-if="importError" class="form-error import-error">{{ importError }}</p>
           <footer class="import-footer"><button class="button secondary" type="button" :disabled="importing" @click="closeImport">取消</button><button class="button primary" :disabled="importing">{{ importing ? '正在导入…' : '确认导入' }}</button></footer>
         </form>
       </section>

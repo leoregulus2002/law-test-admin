@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import NoticeToast from '../components/NoticeToast.vue'
 import api from '../lib/api'
 import { saveSession } from '../lib/auth'
 import { loginWithAdminPasskey } from '../lib/passkey'
@@ -43,6 +44,7 @@ async function passkeyLogin() {
 
 <template>
   <main class="login-page">
+    <NoticeToast :message="error" @dismiss="error = ''" />
     <section class="login-aside">
       <div class="login-brand"><span class="brand-mark">法</span><span>法考题库管理</span></div>
       <div class="login-intro"><p>管理端</p><h1>让题库运营<br />井然有序。</h1><span>统一管理系统用户、题库与内容权限。</span></div>
@@ -54,7 +56,6 @@ async function passkeyLogin() {
         <div><span class="eyebrow">管理员登录</span><h2>欢迎回来</h2><p>使用管理员账号进入法考题库管理端。</p></div>
         <label>管理员账号<input v-model.trim="username" autocomplete="username" placeholder="请输入管理员账号" required /></label>
         <label>登录密码<input v-model="password" autocomplete="current-password" type="password" placeholder="请输入登录密码" required /></label>
-        <p v-if="error" class="form-error">{{ error }}</p>
         <button class="button primary full" type="submit" :disabled="loading">{{ loading ? '正在验证…' : '密码登录' }}</button>
         <div class="divider"><span>或</span></div>
         <button class="button secondary full" type="button" :disabled="passkeyLoading" @click="passkeyLogin"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2"/></svg>{{ passkeyLoading ? '等待安全设备确认…' : '使用账号 Passkey 登录' }}</button>

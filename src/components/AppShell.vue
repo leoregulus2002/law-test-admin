@@ -11,6 +11,7 @@ const title = computed(() => ({
   '/question-banks': '题库管理',
   '/questions': '题目管理',
   '/high-frequency-topics': '今日高频考点',
+  '/mock-exam-configuration': '模拟考试参数',
   '/users': '系统用户',
   '/security': '账号安全',
 })[route.path] ?? '管理端')
@@ -20,6 +21,7 @@ const nav = [
   { to: '/question-banks', label: '题库管理', icon: 'book' },
   { to: '/questions', label: '题目管理', icon: 'list' },
   { to: '/high-frequency-topics', label: '高频考点', icon: 'lightbulb' },
+  { to: '/mock-exam-configuration', label: '模拟考试', icon: 'list' },
   { to: '/users', label: '系统用户', icon: 'users' },
 ]
 
