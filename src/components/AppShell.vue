@@ -10,6 +10,7 @@ const title = computed(() => ({
   '/': '控制台',
   '/question-banks': '题库管理',
   '/questions': '题目管理',
+  '/high-frequency-topics': '今日高频考点',
   '/users': '系统用户',
   '/security': '账号安全',
 })[route.path] ?? '管理端')
@@ -18,6 +19,7 @@ const nav = [
   { to: '/', label: '控制台', icon: 'grid' },
   { to: '/question-banks', label: '题库管理', icon: 'book' },
   { to: '/questions', label: '题目管理', icon: 'list' },
+  { to: '/high-frequency-topics', label: '高频考点', icon: 'lightbulb' },
   { to: '/users', label: '系统用户', icon: 'users' },
 ]
 
@@ -40,6 +42,7 @@ async function logout() {
           <svg v-if="item.icon === 'grid'" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></svg>
           <svg v-else-if="item.icon === 'book'" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16"/></svg>
           <svg v-else-if="item.icon === 'list'" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg>
+          <svg v-else-if="item.icon === 'lightbulb'" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 22h4M8.2 14.2A7 7 0 1 1 15.8 14.2c-.9.85-1.35 1.66-1.45 2.8h-4.7c-.1-1.14-.55-1.95-1.45-2.8Z"/><path d="M12 2v1M4.9 4.9l.7.7M19.1 4.9l-.7.7M3 12h1M20 12h1"/></svg>
           <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-4A4.5 4.5 0 0 0 3 18.5V20"/><circle cx="9.5" cy="7" r="3.5"/><path d="M17 9a3 3 0 0 1 0 5.8M21 20v-1.5a4.5 4.5 0 0 0-2.8-4.15"/></svg>
           <span>{{ item.label }}</span>
         </RouterLink>
