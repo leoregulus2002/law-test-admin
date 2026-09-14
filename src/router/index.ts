@@ -8,6 +8,7 @@ import QuestionBanksView from '../views/QuestionBanksView.vue'
 import QuestionsView from '../views/QuestionsView.vue'
 import HighFrequencyTopicsView from '../views/HighFrequencyTopicsView.vue'
 import MockExamConfigView from '../views/MockExamConfigView.vue'
+import SystemConfigurationView from '../views/SystemConfigurationView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,6 +19,7 @@ const router = createRouter({
     { path: '/questions', component: QuestionsView, meta: { requiresAuth: true } },
     { path: '/high-frequency-topics', component: HighFrequencyTopicsView, meta: { requiresAuth: true } },
     { path: '/mock-exam-configuration', component: MockExamConfigView, meta: { requiresAuth: true } },
+    { path: '/system-configuration', component: SystemConfigurationView, meta: { requiresAuth: true } },
     { path: '/users', component: UserManagementView, meta: { requiresAuth: true } },
     { path: '/security', component: SecurityView, meta: { requiresAuth: true } },
   ],

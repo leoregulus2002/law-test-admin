@@ -10,11 +10,15 @@ interface Page<T> { items: T[]; total: number }
 const banks = ref<QuestionBank[]>([])
 const error = ref('')
 const importOpen = ref(false)
+const createOpen = ref(false)
 const importing = ref(false)
+const creating = ref(false)
 const importError = ref('')
+const createError = ref('')
 const uploadInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const form = reactive({ name: '', questionType: 'SINGLE_CHOICE' })
+const createForm = reactive({ name: '' })
 
 const questionTypes = [
   { value: 'SINGLE_CHOICE', label: '单选题', detail: '每题仅有一个正确答案', marker: 'A' },
@@ -35,6 +39,8 @@ async function remove(bank: QuestionBank) {
   await load()
 }
 function openImport() { importOpen.value = true; importError.value = '' }
+function openCreate() { createOpen.value = true; createError.value = ''; createForm.name = '' }
+function closeCreate() { createOpen.value = false; createError.value = ''; createForm.name = '' }
 function closeImport() {
   importOpen.value = false
   importError.value = ''
@@ -72,6 +78,18 @@ async function importQuestions() {
     importError.value = reason.response?.data?.detail ?? reason.response?.data?.message ?? '导入失败，请检查文件内容后重试'
   } finally { importing.value = false }
 }
+async function createBank() {
+  if (!createForm.name.trim()) { createError.value = '请输入题库名称'; return }
+  creating.value = true
+  createError.value = ''
+  try {
+    await api.post('/api/v1/question-banks', { name: createForm.name.trim() })
+    closeCreate()
+    await load()
+  } catch (reason: any) {
+    createError.value = reason.response?.data?.detail ?? reason.response?.data?.message ?? '创建题库失败'
+  } finally { creating.value = false }
+}
 
 onMounted(load)
 </script>
@@ -80,11 +98,13 @@ onMounted(load)
   <AppShell>
     <NoticeToast :message="error" @dismiss="error = ''" />
     <NoticeToast :message="importError" @dismiss="importError = ''" />
+    <NoticeToast :message="createError" @dismiss="createError = ''" />
     <div class="page-heading">
       <div><h1>题库管理</h1><p>查看现有题库，并清理不再使用的题库数据。</p></div>
-      <button class="button primary" @click="openImport"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3"/><path d="m7 8 5-5 5 5"/><path d="M5 14v5h14v-5"/></svg>导入题库</button>
+      <div class="page-actions"><button class="button secondary" @click="openCreate">创建题库</button><button class="button primary" @click="openImport"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3"/><path d="m7 8 5-5 5 5"/><path d="M5 14v5h14v-5"/></svg>导入题库</button></div>
     </div>
-    <section class="surface table-surface"><p v-if="error" class="form-error table-error">{{ error }}</p><div class="table-scroll"><table><thead><tr><th>题库名称</th><th>题库编码</th><th>来源文件</th><th class="actions">操作</th></tr></thead><tbody><tr v-if="banks.length === 0"><td class="empty-state" colspan="4">暂无题库。</td></tr><tr v-for="bank in banks" :key="bank.id"><td><b>{{ bank.name }}</b></td><td><code>{{ bank.code }}</code></td><td class="muted">{{ bank.sourceFileName }}</td><td class="actions"><button class="danger" @click="remove(bank)">删除题库</button></td></tr></tbody></table></div></section>
+    <section class="surface table-surface"><p v-if="error" class="form-error table-error">{{ error }}</p><div class="table-scroll"><table><thead><tr><th>题库名称</th><th>题库编码</th><th>来源</th><th class="actions">操作</th></tr></thead><tbody><tr v-if="banks.length === 0"><td class="empty-state" colspan="4">暂无题库。</td></tr><tr v-for="bank in banks" :key="bank.id"><td><b>{{ bank.name }}</b></td><td><code>{{ bank.code }}</code></td><td class="muted">{{ bank.sourceFileName }}</td><td class="actions"><button class="danger" @click="remove(bank)">删除题库</button></td></tr></tbody></table></div></section>
+    <div v-if="createOpen" class="modal-backdrop" @click.self="closeCreate"><section class="import-modal small-modal" role="dialog" aria-modal="true" aria-labelledby="create-bank-title"><header class="import-modal-header"><div><span class="eyebrow">系统创建</span><h2 id="create-bank-title">创建空题库</h2><p>创建后可在题目管理中手动添加题目。</p></div><button class="icon-button" aria-label="关闭创建题库弹窗" @click="closeCreate">×</button></header><form class="import-form" @submit.prevent="createBank"><label class="import-label">题库名称<input v-model.trim="createForm.name" placeholder="例如：2026 年模拟题" required /></label><footer class="import-footer"><button class="button secondary" type="button" :disabled="creating" @click="closeCreate">取消</button><button class="button primary" :disabled="creating">{{ creating ? '创建中…' : '创建题库' }}</button></footer></form></section></div>
     <div v-if="importOpen" class="modal-backdrop" @click.self="closeImport">
       <section class="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-title">
         <header class="import-modal-header"><div><span class="eyebrow">WORD 题目导入</span><h2 id="import-title">导入题库</h2><p>上传文件并为本次题目选择对应题型。</p></div><button class="icon-button" aria-label="关闭导入弹窗" @click="closeImport">×</button></header>
