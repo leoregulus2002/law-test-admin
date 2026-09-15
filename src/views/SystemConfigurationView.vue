@@ -8,11 +8,17 @@ interface SystemConfiguration {
   key: string
   name: string
   description: string
-  enabled: boolean
-  baseUrl: string
-  apiKeyConfigured: boolean
-  model: string
-  timeoutSeconds: number
+  enabled?: boolean
+  baseUrl?: string
+  apiKeyConfigured?: boolean
+  model?: string
+  timeoutSeconds?: number
+  passwordFailureLimit?: number
+  passwordFailureWindow?: string
+  passwordLockDuration?: string
+  accountLimit?: number
+  ipLimit?: number
+  rateWindow?: string
 }
 
 const configurations = ref<SystemConfiguration[]>([])
@@ -32,6 +38,12 @@ const form = reactive({
   apiKeyConfigured: false,
   model: '',
   timeoutSeconds: 45,
+  passwordFailureLimit: 5,
+  passwordFailureWindow: 'PT15M',
+  passwordLockDuration: 'PT15M',
+  accountLimit: 20,
+  ipLimit: 100,
+  rateWindow: 'PT1M',
 })
 
 const filteredConfigurations = computed(() => {
@@ -52,6 +64,16 @@ const selectedConfiguration = computed(
 const parameters = computed(() => {
   const configuration = selectedConfiguration.value
   if (!configuration) return []
+  if (configuration.key === 'login-protection') {
+    return [
+      { label: '密码失败上限', key: 'passwordFailureLimit', value: `${configuration.passwordFailureLimit} 次`, state: 'configured' },
+      { label: '密码失败窗口', key: 'passwordFailureWindow', value: formatDuration(configuration.passwordFailureWindow), state: 'configured' },
+      { label: '账户登录上限', key: 'accountLimit', value: `${configuration.accountLimit} 次`, state: 'configured' },
+      { label: 'IP 登录上限', key: 'ipLimit', value: `${configuration.ipLimit} 次`, state: 'configured' },
+      { label: '登录限流窗口', key: 'rateWindow', value: formatDuration(configuration.rateWindow), state: 'configured' },
+      { label: '密码锁定时长', key: 'passwordLockDuration', value: formatDuration(configuration.passwordLockDuration), state: 'configured' },
+    ]
+  }
   return [
     {
       label: '模型评分状态',
@@ -86,6 +108,16 @@ const parameters = computed(() => {
   ]
 })
 
+function formatDuration(value?: string) {
+  if (!value) return '未配置'
+  const match = value.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/)
+  if (!match) return value
+  const [, hours, minutes, seconds] = match
+  return [hours && `${hours} 小时`, minutes && `${minutes} 分钟`, seconds && `${seconds} 秒`]
+    .filter(Boolean)
+    .join(' ') || '0 秒'
+}
+
 const editingParameter = computed(
   () => parameters.value.find((parameter) => parameter.key === editingParameterKey.value) ?? null,
 )
@@ -108,12 +140,18 @@ function openEditor(configuration: SystemConfiguration, parameterKey: string | n
   editingParameterKey.value = parameterKey
   Object.assign(form, {
     key: configuration.key,
-    enabled: configuration.enabled,
-    baseUrl: configuration.baseUrl,
+    enabled: configuration.enabled ?? false,
+    baseUrl: configuration.baseUrl ?? '',
     apiKey: '',
-    apiKeyConfigured: configuration.apiKeyConfigured,
-    model: configuration.model,
-    timeoutSeconds: configuration.timeoutSeconds,
+    apiKeyConfigured: configuration.apiKeyConfigured ?? false,
+    model: configuration.model ?? '',
+    timeoutSeconds: configuration.timeoutSeconds ?? 45,
+    passwordFailureLimit: configuration.passwordFailureLimit ?? 5,
+    passwordFailureWindow: configuration.passwordFailureWindow ?? 'PT15M',
+    passwordLockDuration: configuration.passwordLockDuration ?? 'PT15M',
+    accountLimit: configuration.accountLimit ?? 20,
+    ipLimit: configuration.ipLimit ?? 100,
+    rateWindow: configuration.rateWindow ?? 'PT1M',
   })
   error.value = ''
   editorOpen.value = true
@@ -131,13 +169,23 @@ async function save() {
   error.value = ''
   message.value = ''
   try {
-    await api.put(`/api/v1/admin/system-configurations/${encodeURIComponent(form.key)}`, {
-      enabled: form.enabled,
-      baseUrl: form.baseUrl.trim(),
-      apiKey: form.apiKey,
-      model: form.model.trim(),
-      timeoutSeconds: form.timeoutSeconds,
-    })
+    const payload = form.key === 'login-protection'
+      ? {
+          passwordFailureLimit: form.passwordFailureLimit,
+          passwordFailureWindow: form.passwordFailureWindow.trim(),
+          passwordLockDuration: form.passwordLockDuration.trim(),
+          accountLimit: form.accountLimit,
+          ipLimit: form.ipLimit,
+          rateWindow: form.rateWindow.trim(),
+        }
+      : {
+          enabled: form.enabled,
+          baseUrl: form.baseUrl.trim(),
+          apiKey: form.apiKey,
+          model: form.model.trim(),
+          timeoutSeconds: form.timeoutSeconds,
+        }
+    await api.put(`/api/v1/admin/system-configurations/${encodeURIComponent(form.key)}`, payload)
     editorOpen.value = false
     editingParameterKey.value = null
     message.value = '系统配置已保存。'
@@ -180,7 +228,7 @@ onMounted(load)
           >
             <span class="configuration-mark">⌘</span>
             <span class="configuration-copy"><b>{{ configuration.name }}</b><small>{{ configuration.key }}</small></span>
-            <span :class="['item-state', configuration.enabled ? 'online' : 'offline']" />
+            <span :class="['item-state', configuration.key === 'login-protection' || configuration.enabled ? 'online' : 'offline']" />
           </button>
         </nav>
         <p class="sidebar-note">密钥仅保存于服务端数据库，列表不会展示密钥内容。</p>
@@ -222,12 +270,13 @@ onMounted(load)
         <header class="system-editor-header">
           <div>
             <span class="eyebrow">系统配置 / {{ form.key }}</span>
-            <h2 id="system-editor-title">{{ editingParameter ? `编辑${editingParameter.label}` : '编辑 OpenAPI 配置' }}</h2>
-            <p>{{ editingParameter ? `修改参数键名：${editingParameter.key}` : '用于模拟考试主观题的模型自动评分。' }}</p>
+            <h2 id="system-editor-title">{{ editingParameter ? `编辑${editingParameter.label}` : `编辑${selectedConfiguration?.name ?? '系统配置'}` }}</h2>
+            <p>{{ editingParameter ? `修改参数键名：${editingParameter.key}` : selectedConfiguration?.description }}</p>
           </div>
           <button class="icon-button" aria-label="关闭" :disabled="saving" @click="closeEditor">×</button>
         </header>
         <form @submit.prevent="save">
+          <template v-if="form.key === 'openapi'">
           <label v-if="!editingParameterKey || editingParameterKey === 'enabled'" class="toggle-field">
             <span>
               <b>启用模型评分</b>
@@ -258,6 +307,33 @@ onMounted(load)
             评分超时（秒）
             <input v-model.number="form.timeoutSeconds" type="number" min="5" max="120" required />
           </label>
+          </template>
+          <template v-else-if="form.key === 'login-protection'">
+          <label v-if="!editingParameterKey || editingParameterKey === 'passwordFailureLimit'">
+            密码失败上限（次）
+            <input v-model.number="form.passwordFailureLimit" type="number" min="1" required />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'passwordFailureWindow'">
+            密码失败窗口（ISO-8601 时长）
+            <input v-model="form.passwordFailureWindow" placeholder="PT15M" required />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'passwordLockDuration'">
+            密码锁定时长（ISO-8601 时长）
+            <input v-model="form.passwordLockDuration" placeholder="PT15M" required />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'accountLimit'">
+            账户登录上限（次）
+            <input v-model.number="form.accountLimit" type="number" min="1" required />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'ipLimit'">
+            IP 登录上限（次）
+            <input v-model.number="form.ipLimit" type="number" min="1" required />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'rateWindow'">
+            登录限流窗口（ISO-8601 时长）
+            <input v-model="form.rateWindow" placeholder="PT1M" required />
+          </label>
+          </template>
           <footer>
             <button class="button secondary" type="button" :disabled="saving" @click="closeEditor">取消</button>
             <button class="button primary" :disabled="saving">{{ saving ? '保存中…' : '保存配置' }}</button>
