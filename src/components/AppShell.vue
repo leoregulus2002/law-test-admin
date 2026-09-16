@@ -13,6 +13,7 @@ const title = computed(() => ({
   '/high-frequency-topics': '今日高频考点',
   '/mock-exam-configuration': '模拟考试参数',
   '/system-configuration': '系统配置',
+  '/app-releases': '应用更新',
   '/users': '系统用户',
   '/security': '账号安全',
 })[route.path] ?? '管理端')
@@ -24,6 +25,7 @@ const nav = [
   { to: '/high-frequency-topics', label: '高频考点', icon: 'lightbulb' },
   { to: '/mock-exam-configuration', label: '模拟考试', icon: 'list' },
   { to: '/system-configuration', label: '系统配置', icon: 'list' },
+  { to: '/app-releases', label: '应用更新', icon: 'list' },
   { to: '/users', label: '系统用户', icon: 'users' },
 ]
 
