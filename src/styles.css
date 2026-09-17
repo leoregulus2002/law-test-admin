@@ -530,6 +530,35 @@ tbody tr:last-child td {
 .text-danger {
   color: #dd5e66;
 }
+.bank-delete-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 13px;
+  padding: 6px 9px;
+  border: 1px solid #f4d7d9;
+  border-radius: 6px;
+  background: #fffafb;
+  color: #ca4e58;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  transition: 0.16s ease;
+}
+.bank-delete-button:hover {
+  border-color: #e9aeb4;
+  background: #fff1f2;
+  color: #b83e49;
+}
+.bank-delete-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
 .pagination {
   display: flex;
   align-items: center;
@@ -893,6 +922,54 @@ tbody tr:last-child td {
 }
 .import-modal-header .icon-button {
   margin: -8px -8px 0 0;
+}
+.danger-eyebrow {
+  color: #ca4e58;
+}
+.delete-modal {
+  width: min(510px, 100%);
+}
+.delete-form {
+  padding-top: 23px;
+}
+.delete-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1px solid #f4dbde;
+  border-radius: 8px;
+  background: #fff8f8;
+  color: #76545a;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.delete-warning span {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #dd5e66;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+.delete-warning p {
+  margin: 0;
+}
+.delete-warning b {
+  color: #33425d;
+}
+.danger-button {
+  border-color: #d9545e;
+  background: #d9545e;
+  color: #fff;
+}
+.danger-button:hover:not(:disabled) {
+  border-color: #c54550;
+  background: #c54550;
 }
 .import-form {
   padding: 26px 32px 28px;

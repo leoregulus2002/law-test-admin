@@ -70,7 +70,9 @@ async function upload() {
     payload.append("versionName", form.versionName.trim());
     payload.append("forceUpdate", String(form.forceUpdate));
     payload.append("releaseNotes", form.releaseNotes.trim());
-    await api.post("/api/v1/admin/app-releases", payload);
+    await api.post("/api/v1/admin/app-releases", payload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     message.value = "APK 已上传，发布后客户端才会检测到新版本。";
     file.value = null;
     form.versionName = "";
