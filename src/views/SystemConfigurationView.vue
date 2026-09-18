@@ -26,6 +26,7 @@ interface SystemConfiguration {
   embeddingBaseUrl?: string
   embeddingApiKeyConfigured?: boolean
   embeddingModel?: string
+  embeddingProvider?: string
   embeddingDimension?: number
   topK?: number
 }
@@ -62,6 +63,7 @@ const form = reactive({
   embeddingApiKey: '',
   embeddingApiKeyConfigured: false,
   embeddingModel: '',
+  embeddingProvider: 'openai-compatible',
   embeddingDimension: 1536,
   topK: 8,
 })
@@ -104,6 +106,7 @@ const parameters = computed(() => {
       { label: '嵌入接口地址', key: 'embeddingBaseUrl', value: configuration.reuseChatCredentialsForEmbedding ? '复用问答服务' : configuration.embeddingBaseUrl || '未配置', state: configuration.reuseChatCredentialsForEmbedding || configuration.embeddingBaseUrl ? 'configured' : 'empty' },
       { label: '嵌入 API 密钥', key: 'embeddingApiKey', value: configuration.reuseChatCredentialsForEmbedding ? '复用问答服务' : configuration.embeddingApiKeyConfigured ? '已安全保存' : '未配置', state: configuration.reuseChatCredentialsForEmbedding || configuration.embeddingApiKeyConfigured ? 'configured' : 'empty' },
       { label: '嵌入模型', key: 'embeddingModel', value: configuration.embeddingModel || '未配置', state: configuration.embeddingModel ? 'configured' : 'empty' },
+      { label: '嵌入服务类型', key: 'embeddingProvider', value: configuration.embeddingProvider === 'ollama' ? '本地 Ollama' : 'OpenAI 兼容', state: 'configured' },
       { label: '请求超时', key: 'timeoutSeconds', value: `${configuration.timeoutSeconds ?? 45} 秒`, state: 'configured' },
       { label: '召回片段数', key: 'topK', value: `${configuration.topK ?? 8} 条`, state: 'configured' },
     ]
@@ -195,6 +198,7 @@ function openEditor(configuration: SystemConfiguration, parameterKey: string | n
     embeddingApiKey: '',
     embeddingApiKeyConfigured: configuration.embeddingApiKeyConfigured ?? false,
     embeddingModel: configuration.embeddingModel ?? '',
+    embeddingProvider: configuration.embeddingProvider ?? 'openai-compatible',
     embeddingDimension: configuration.embeddingDimension ?? 1536,
     topK: configuration.topK ?? 8,
   })
@@ -233,6 +237,7 @@ async function save() {
             embeddingBaseUrl: form.reuseChatCredentialsForEmbedding ? '' : form.embeddingBaseUrl.trim(),
             embeddingApiKey: form.reuseChatCredentialsForEmbedding ? '' : form.embeddingApiKey,
             embeddingModel: form.embeddingModel.trim(),
+            embeddingProvider: form.embeddingProvider,
             embeddingDimension: form.embeddingDimension,
             timeoutSeconds: form.timeoutSeconds,
             topK: form.topK,
@@ -411,16 +416,24 @@ onMounted(load)
             问答模型
             <input v-model="form.chatModel" placeholder="例如 deepseek-chat" :required="form.enabled" />
           </label>
-          <label v-if="!editingParameterKey || ['reuseChatCredentialsForEmbedding', 'embeddingBaseUrl', 'embeddingApiKey'].includes(editingParameterKey)" class="toggle-field">
+          <label v-if="!editingParameterKey || ['reuseChatCredentialsForEmbedding', 'embeddingProvider', 'embeddingBaseUrl', 'embeddingApiKey'].includes(editingParameterKey)" class="toggle-field">
             <span><b>嵌入服务复用问答凭据</b><small>仅当同一服务商同时支持聊天和 embeddings 接口时启用。</small></span>
             <input v-model="form.reuseChatCredentialsForEmbedding" type="checkbox" />
           </label>
           <template v-if="!form.reuseChatCredentialsForEmbedding">
+            <label v-if="!editingParameterKey || editingParameterKey === 'embeddingProvider'">
+              嵌入服务类型
+              <select v-model="form.embeddingProvider">
+                <option value="openai-compatible">OpenAI 兼容接口</option>
+                <option value="ollama">本机 Ollama</option>
+              </select>
+              <small v-if="form.embeddingProvider === 'ollama'" class="field-hint">使用本机 Ollama 的 /api/embed 接口，不需要 API 密钥。</small>
+            </label>
             <label v-if="!editingParameterKey || editingParameterKey === 'embeddingBaseUrl'">
               嵌入接口地址
-              <input v-model="form.embeddingBaseUrl" type="url" placeholder="https://api.openai.com/v1" :required="form.enabled" />
+              <input v-model="form.embeddingBaseUrl" type="url" :placeholder="form.embeddingProvider === 'ollama' ? 'http://localhost:11434' : 'https://api.openai.com/v1'" :required="form.enabled" />
             </label>
-            <label v-if="!editingParameterKey || editingParameterKey === 'embeddingApiKey'">
+            <label v-if="form.embeddingProvider !== 'ollama' && (!editingParameterKey || editingParameterKey === 'embeddingApiKey')">
               嵌入 API 密钥
               <input v-model="form.embeddingApiKey" type="password" :placeholder="form.embeddingApiKeyConfigured ? '已保存；留空则不修改' : '输入嵌入服务密钥'" :required="form.enabled && !form.embeddingApiKeyConfigured" autocomplete="new-password" />
               <small v-if="form.embeddingApiKeyConfigured" class="field-hint">密钥已保存。留空即可保留原密钥。</small>
@@ -513,8 +526,8 @@ onMounted(load)
 .system-editor-header p { margin: 0; color: #8190a4; font-size: 13px; }
 .system-editor form { display: grid; gap: 17px; padding: 25px 30px 28px; }
 .system-editor label { display: grid; gap: 7px; color: #455670; font-size: 13px; font-weight: 700; }
-.system-editor input:not([type='checkbox']) { width: 100%; box-sizing: border-box; border: 1px solid #d9e2ef; border-radius: 10px; padding: 11px 12px; color: #263956; outline: none; }
-.system-editor input:focus { border-color: #3675e6; box-shadow: 0 0 0 3px rgb(54 117 230 / .11); }
+.system-editor input:not([type='checkbox']), .system-editor select { width: 100%; box-sizing: border-box; border: 1px solid #d9e2ef; border-radius: 10px; padding: 11px 12px; color: #263956; outline: none; background: #fff; }
+.system-editor input:focus, .system-editor select:focus { border-color: #3675e6; box-shadow: 0 0 0 3px rgb(54 117 230 / .11); }
 .toggle-field { display: flex !important; align-items: center; justify-content: space-between; gap: 24px; padding: 15px; border: 1px solid #e2eaf5; border-radius: 12px; background: #f8fbff; }
 .toggle-field span { display: grid; gap: 4px; }
 .toggle-field small, .field-hint { color: #8190a4; font-size: 12px; font-weight: 400; }
