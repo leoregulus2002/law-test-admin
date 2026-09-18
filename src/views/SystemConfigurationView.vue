@@ -19,6 +19,15 @@ interface SystemConfiguration {
   accountLimit?: number
   ipLimit?: number
   rateWindow?: string
+  chatBaseUrl?: string
+  chatApiKeyConfigured?: boolean
+  chatModel?: string
+  reuseChatCredentialsForEmbedding?: boolean
+  embeddingBaseUrl?: string
+  embeddingApiKeyConfigured?: boolean
+  embeddingModel?: string
+  embeddingDimension?: number
+  topK?: number
 }
 
 const configurations = ref<SystemConfiguration[]>([])
@@ -44,6 +53,17 @@ const form = reactive({
   accountLimit: 20,
   ipLimit: 100,
   rateWindow: 'PT1M',
+  chatBaseUrl: '',
+  chatApiKey: '',
+  chatApiKeyConfigured: false,
+  chatModel: '',
+  reuseChatCredentialsForEmbedding: true,
+  embeddingBaseUrl: '',
+  embeddingApiKey: '',
+  embeddingApiKeyConfigured: false,
+  embeddingModel: '',
+  embeddingDimension: 1536,
+  topK: 8,
 })
 
 const filteredConfigurations = computed(() => {
@@ -72,6 +92,20 @@ const parameters = computed(() => {
       { label: 'IP 登录上限', key: 'ipLimit', value: `${configuration.ipLimit} 次`, state: 'configured' },
       { label: '登录限流窗口', key: 'rateWindow', value: formatDuration(configuration.rateWindow), state: 'configured' },
       { label: '密码锁定时长', key: 'passwordLockDuration', value: formatDuration(configuration.passwordLockDuration), state: 'configured' },
+    ]
+  }
+  if (configuration.key === 'legal-knowledge') {
+    return [
+      { label: '问答服务状态', key: 'enabled', value: configuration.enabled ? '已启用' : '未启用', state: configuration.enabled ? 'enabled' : 'empty' },
+      { label: '问答接口地址', key: 'chatBaseUrl', value: configuration.chatBaseUrl || '未配置', state: configuration.chatBaseUrl ? 'configured' : 'empty' },
+      { label: '问答 API 密钥', key: 'chatApiKey', value: configuration.chatApiKeyConfigured ? '已安全保存' : '未配置', state: configuration.chatApiKeyConfigured ? 'configured' : 'empty' },
+      { label: '问答模型', key: 'chatModel', value: configuration.chatModel || '未配置', state: configuration.chatModel ? 'configured' : 'empty' },
+      { label: '嵌入凭据', key: 'reuseChatCredentialsForEmbedding', value: configuration.reuseChatCredentialsForEmbedding ? '复用问答服务' : '独立配置', state: 'configured' },
+      { label: '嵌入接口地址', key: 'embeddingBaseUrl', value: configuration.reuseChatCredentialsForEmbedding ? '复用问答服务' : configuration.embeddingBaseUrl || '未配置', state: configuration.reuseChatCredentialsForEmbedding || configuration.embeddingBaseUrl ? 'configured' : 'empty' },
+      { label: '嵌入 API 密钥', key: 'embeddingApiKey', value: configuration.reuseChatCredentialsForEmbedding ? '复用问答服务' : configuration.embeddingApiKeyConfigured ? '已安全保存' : '未配置', state: configuration.reuseChatCredentialsForEmbedding || configuration.embeddingApiKeyConfigured ? 'configured' : 'empty' },
+      { label: '嵌入模型', key: 'embeddingModel', value: configuration.embeddingModel || '未配置', state: configuration.embeddingModel ? 'configured' : 'empty' },
+      { label: '请求超时', key: 'timeoutSeconds', value: `${configuration.timeoutSeconds ?? 45} 秒`, state: 'configured' },
+      { label: '召回片段数', key: 'topK', value: `${configuration.topK ?? 8} 条`, state: 'configured' },
     ]
   }
   return [
@@ -152,6 +186,17 @@ function openEditor(configuration: SystemConfiguration, parameterKey: string | n
     accountLimit: configuration.accountLimit ?? 20,
     ipLimit: configuration.ipLimit ?? 100,
     rateWindow: configuration.rateWindow ?? 'PT1M',
+    chatBaseUrl: configuration.chatBaseUrl ?? '',
+    chatApiKey: '',
+    chatApiKeyConfigured: configuration.chatApiKeyConfigured ?? false,
+    chatModel: configuration.chatModel ?? '',
+    reuseChatCredentialsForEmbedding: configuration.reuseChatCredentialsForEmbedding ?? true,
+    embeddingBaseUrl: configuration.embeddingBaseUrl ?? '',
+    embeddingApiKey: '',
+    embeddingApiKeyConfigured: configuration.embeddingApiKeyConfigured ?? false,
+    embeddingModel: configuration.embeddingModel ?? '',
+    embeddingDimension: configuration.embeddingDimension ?? 1536,
+    topK: configuration.topK ?? 8,
   })
   error.value = ''
   editorOpen.value = true
@@ -178,7 +223,21 @@ async function save() {
           ipLimit: form.ipLimit,
           rateWindow: form.rateWindow.trim(),
         }
-      : {
+      : form.key === 'legal-knowledge'
+        ? {
+            enabled: form.enabled,
+            chatBaseUrl: form.chatBaseUrl.trim(),
+            chatApiKey: form.chatApiKey,
+            chatModel: form.chatModel.trim(),
+            reuseChatCredentialsForEmbedding: form.reuseChatCredentialsForEmbedding,
+            embeddingBaseUrl: form.reuseChatCredentialsForEmbedding ? '' : form.embeddingBaseUrl.trim(),
+            embeddingApiKey: form.reuseChatCredentialsForEmbedding ? '' : form.embeddingApiKey,
+            embeddingModel: form.embeddingModel.trim(),
+            embeddingDimension: form.embeddingDimension,
+            timeoutSeconds: form.timeoutSeconds,
+            topK: form.topK,
+          }
+        : {
           enabled: form.enabled,
           baseUrl: form.baseUrl.trim(),
           apiKey: form.apiKey,
@@ -332,6 +391,52 @@ onMounted(load)
           <label v-if="!editingParameterKey || editingParameterKey === 'rateWindow'">
             登录限流窗口（ISO-8601 时长）
             <input v-model="form.rateWindow" placeholder="PT1M" required />
+          </label>
+          </template>
+          <template v-else-if="form.key === 'legal-knowledge'">
+          <label v-if="!editingParameterKey || editingParameterKey === 'enabled'" class="toggle-field">
+            <span><b>启用法律智库</b><small>启用后，客户端会基于已索引的法规原文进行问答。</small></span>
+            <input v-model="form.enabled" type="checkbox" />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'chatBaseUrl'">
+            问答接口地址
+            <input v-model="form.chatBaseUrl" type="url" placeholder="https://api.deepseek.com" :required="form.enabled" />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'chatApiKey'">
+            问答 API 密钥
+            <input v-model="form.chatApiKey" type="password" :placeholder="form.chatApiKeyConfigured ? '已保存；留空则不修改' : '输入问答服务密钥'" :required="form.enabled && !form.chatApiKeyConfigured" autocomplete="new-password" />
+            <small v-if="form.chatApiKeyConfigured" class="field-hint">密钥已保存。留空即可保留原密钥。</small>
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'chatModel'">
+            问答模型
+            <input v-model="form.chatModel" placeholder="例如 deepseek-chat" :required="form.enabled" />
+          </label>
+          <label v-if="!editingParameterKey || ['reuseChatCredentialsForEmbedding', 'embeddingBaseUrl', 'embeddingApiKey'].includes(editingParameterKey)" class="toggle-field">
+            <span><b>嵌入服务复用问答凭据</b><small>仅当同一服务商同时支持聊天和 embeddings 接口时启用。</small></span>
+            <input v-model="form.reuseChatCredentialsForEmbedding" type="checkbox" />
+          </label>
+          <template v-if="!form.reuseChatCredentialsForEmbedding">
+            <label v-if="!editingParameterKey || editingParameterKey === 'embeddingBaseUrl'">
+              嵌入接口地址
+              <input v-model="form.embeddingBaseUrl" type="url" placeholder="https://api.openai.com/v1" :required="form.enabled" />
+            </label>
+            <label v-if="!editingParameterKey || editingParameterKey === 'embeddingApiKey'">
+              嵌入 API 密钥
+              <input v-model="form.embeddingApiKey" type="password" :placeholder="form.embeddingApiKeyConfigured ? '已保存；留空则不修改' : '输入嵌入服务密钥'" :required="form.enabled && !form.embeddingApiKeyConfigured" autocomplete="new-password" />
+              <small v-if="form.embeddingApiKeyConfigured" class="field-hint">密钥已保存。留空即可保留原密钥。</small>
+            </label>
+          </template>
+          <label v-if="!editingParameterKey || editingParameterKey === 'embeddingModel'">
+            嵌入模型
+            <input v-model="form.embeddingModel" placeholder="例如 text-embedding-3-small" :required="form.enabled" />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'timeoutSeconds'">
+            请求超时（秒）
+            <input v-model.number="form.timeoutSeconds" type="number" min="5" max="120" required />
+          </label>
+          <label v-if="!editingParameterKey || editingParameterKey === 'topK'">
+            召回片段数
+            <input v-model.number="form.topK" type="number" min="2" max="20" required />
           </label>
           </template>
           <footer>
