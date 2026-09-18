@@ -10,6 +10,7 @@ import HighFrequencyTopicsView from '../views/HighFrequencyTopicsView.vue'
 import MockExamConfigView from '../views/MockExamConfigView.vue'
 import SystemConfigurationView from '../views/SystemConfigurationView.vue'
 import AppReleasesView from '../views/AppReleasesView.vue'
+import LegalKnowledgeView from '../views/LegalKnowledgeView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -22,6 +23,7 @@ const router = createRouter({
     { path: '/mock-exam-configuration', component: MockExamConfigView, meta: { requiresAuth: true } },
     { path: '/system-configuration', component: SystemConfigurationView, meta: { requiresAuth: true } },
     { path: '/app-releases', component: AppReleasesView, meta: { requiresAuth: true } },
+    { path: '/legal-knowledge', component: LegalKnowledgeView, meta: { requiresAuth: true } },
     { path: '/users', component: UserManagementView, meta: { requiresAuth: true } },
     { path: '/security', component: SecurityView, meta: { requiresAuth: true } },
   ],

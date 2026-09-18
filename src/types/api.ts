@@ -43,3 +43,26 @@ export interface Passkey {
   createdAt: string
   lastUsedAt: string | null
 }
+
+export interface LegalKnowledgeConfiguration {
+  enabled: boolean
+  baseUrl: string
+  apiKeyConfigured: boolean
+  chatModel: string
+  embeddingModel: string
+  embeddingDimension: number
+  timeoutSeconds: number
+  topK: number
+}
+
+export interface LegalKnowledgeDocument {
+  id: number
+  title: string
+  sourceFileName: string
+  sourceType: 'PDF' | 'DOCX' | 'TEXT' | 'MARKDOWN'
+  sizeBytes: number
+  status: 'PROCESSING' | 'READY' | 'FAILED'
+  failureMessage: string | null
+  createdAt: string
+  indexedAt: string | null
+}
