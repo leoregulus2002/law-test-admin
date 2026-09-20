@@ -62,7 +62,28 @@ export interface LegalKnowledgeDocument {
   sourceType: 'PDF' | 'DOCX' | 'TEXT' | 'MARKDOWN'
   sizeBytes: number
   status: 'PROCESSING' | 'READY' | 'FAILED'
+  totalChunkCount: number
+  indexedChunkCount: number
   failureMessage: string | null
   createdAt: string
   indexedAt: string | null
+}
+
+export interface OfficialLawSummary {
+  documentId: number
+  title: string
+  documentType: string
+  authority: string | null
+  currentStatus: 'UNKNOWN' | 'EFFECTIVE' | 'AMENDED' | 'REPEALED' | 'NOT_EFFECTIVE'
+  effectiveDate: string | null
+  sourceName: string
+  sourceLevel: 'OFFICIAL_PRIMARY' | 'OFFICIAL_SECONDARY' | 'THIRD_PARTY'
+  versionCount: number
+  articleCount: number
+  chunkCount: number
+  pendingChunkCount: number
+  processingChunkCount: number
+  readyChunkCount: number
+  failedChunkCount: number
+  lastEmbeddingCompletedAt: string | null
 }
